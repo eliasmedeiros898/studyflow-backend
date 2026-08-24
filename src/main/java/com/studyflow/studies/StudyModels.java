@@ -99,7 +99,7 @@ public final class StudyModels {
 
     public record SubjectDetails(
             Subject subject, SubjectMetrics metrics, List<TopicSummary> topics,
-            List<StudySession> recentSessions
+            List<StudySession> recentSessions, List<StudyTask> reviews
     ) {}
 
     public record CreateSession(

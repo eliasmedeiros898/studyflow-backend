@@ -49,4 +49,11 @@ class StudyServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Acertos");
     }
+
+    @Test
+    void rejectsReviewWithoutTimeOrQuestions() {
+        assertThatThrownBy(() -> StudyService.validateReviewMetrics(0, 0, 0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("tempo estudado");
+    }
 }

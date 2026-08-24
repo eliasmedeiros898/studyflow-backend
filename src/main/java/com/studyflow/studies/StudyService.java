@@ -70,7 +70,9 @@ public class StudyService {
                     calculateAccuracy(correct, questions), items.get(0).getStudiedOn());
         }).toList();
         return new SubjectDetails(toSubject(subject), metrics(subjectId, related), topics,
-                related.stream().limit(10).map(this::toSession).toList());
+                related.stream().limit(10).map(this::toSession).toList(),
+                tasks.findTop20ByUserIdAndSubjectIdAndOriginOrderByPlannedDateDesc(
+                        userId, subjectId, TaskOrigin.AUTOMATIC_REVIEW).stream().map(this::toTask).toList());
     }
 
     @Transactional
@@ -175,6 +177,10 @@ public class StudyService {
     public StudyTask toggleTask(UUID userId, UUID id) {
         var task = tasks.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new NoSuchElementException("Tarefa não encontrada."));
+        if (!task.isCompleted() && task.getOrigin() == TaskOrigin.AUTOMATIC_REVIEW) {
+            throw new IllegalArgumentException(
+                    "Conclua a revisão pela Central de revisões para registrar o resultado estudado.");
+        }
         if (task.isCompleted() && task.getOrigin() == TaskOrigin.AUTOMATIC_REVIEW
                 && task.getReviewTopicKey() != null
                 && tasks.findOtherPendingAutomaticReview(userId, task.getSubject().getId(),
@@ -208,22 +214,21 @@ public class StudyService {
         }
 
         StudySession recordedSession = null;
-        SessionEntity reviewSession = null;
-        if (durationMinutes > 0 || questions > 0) {
-            String topic = task.getSourceSession() == null
-                    ? task.getTitle().replaceFirst("(?i)^Revisar:\\s*", "").trim()
-                    : task.getSourceSession().getTopic();
-            reviewSession = sessions.save(new SessionEntity(users.getReferenceById(userId), task.getSubject(),
-                    topic, durationMinutes, studiedOn, questions, correctAnswers, SessionType.REVIEW));
-            recordedSession = toSession(reviewSession);
-        }
+        String topic = task.getSourceSession() == null
+                ? task.getTitle().replaceFirst("(?i)^Revisar:\\s*", "").trim()
+                : task.getSourceSession().getTopic();
+        String reviewTopicKey = task.getReviewTopicKey() == null || task.getReviewTopicKey().isBlank()
+                ? topicKey(topic) : task.getReviewTopicKey();
+        SessionEntity reviewSession = sessions.save(new SessionEntity(users.getReferenceById(userId), task.getSubject(),
+                topic, durationMinutes, studiedOn, questions, correctAnswers, SessionType.REVIEW));
+        recordedSession = toSession(reviewSession);
         task.complete();
         tasks.flush();
         StudyTask next = null;
         if (nextDate != null) {
             TaskEntity followUp = tasks.save(new TaskEntity(users.getReferenceById(userId), task.getSubject(),
                     task.getTitle(), nextDate, TaskType.REVIEW, TaskOrigin.AUTOMATIC_REVIEW,
-                    reviewSession == null ? task.getSourceSession() : reviewSession, task.getReviewTopicKey()));
+                    reviewSession, reviewTopicKey));
             next = toTask(followUp);
         }
         return new CompleteReviewResult(toTask(task), next, recordedSession);
@@ -234,6 +239,9 @@ public class StudyService {
             throw new IllegalArgumentException("A duração deve ficar entre 0 e 1440 minutos.");
         }
         validateAnswers(questions, correctAnswers);
+        if (durationMinutes == 0 && questions == 0) {
+            throw new IllegalArgumentException("Informe o tempo estudado, as questões respondidas ou ambos.");
+        }
     }
 
     @Transactional

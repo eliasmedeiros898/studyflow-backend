@@ -11,6 +11,8 @@ public interface TaskRepository extends JpaRepository<TaskEntity, UUID> {
     List<TaskEntity> findByUserIdOrderByPlannedDateAscTitleAsc(UUID userId);
     Optional<TaskEntity> findByIdAndUserId(UUID id, UUID userId);
     List<TaskEntity> findByUserIdAndOriginOrderByPlannedDateAscTitleAsc(UUID userId, StudyModels.TaskOrigin origin);
+    List<TaskEntity> findTop20ByUserIdAndSubjectIdAndOriginOrderByPlannedDateDesc(
+            UUID userId, UUID subjectId, StudyModels.TaskOrigin origin);
     Optional<TaskEntity> findBySourceSessionIdAndOrigin(UUID sourceSessionId, StudyModels.TaskOrigin origin);
     List<TaskEntity> findByUserIdAndOriginAndCompletedFalse(UUID userId, StudyModels.TaskOrigin origin);
     Optional<TaskEntity> findFirstByUserIdAndSubjectIdAndReviewTopicKeyAndCompletedFalse(
