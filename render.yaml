@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: studyflow-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_USER
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+      - key: EXPOSE_DEVELOPMENT_RESET_TOKEN
+        value: "false"
+      - key: DB_POOL_SIZE
+        value: "3"
+      - key: DB_MIN_IDLE
+        value: "0"
