@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class StudyServiceTest {
     @Test
@@ -34,5 +35,18 @@ class StudyServiceTest {
         assertThat(StudyService.reviewIntervalDays(8, 10)).isEqualTo(7);
         assertThat(StudyService.reviewIntervalDays(9, 10)).isEqualTo(15);
         assertThat(StudyService.reviewIntervalDays(0, 0)).isZero();
+    }
+
+    @Test
+    void acceptsReviewTimeOrQuestionsIndependently() {
+        StudyService.validateReviewMetrics(45, 0, 0);
+        StudyService.validateReviewMetrics(0, 20, 14);
+    }
+
+    @Test
+    void rejectsInconsistentReviewAnswers() {
+        assertThatThrownBy(() -> StudyService.validateReviewMetrics(30, 10, 11))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Acertos");
     }
 }

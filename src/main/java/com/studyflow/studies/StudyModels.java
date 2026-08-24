@@ -73,9 +73,19 @@ public final class StudyModels {
             UUID pendingReviewTaskId, LocalDate nextReviewDate, List<ReviewAttempt> history
     ) {}
 
-    public record CompleteReviewRequest(LocalDate nextReviewDate) {}
+    public record CompleteReviewRequest(
+            LocalDate nextReviewDate,
+            LocalDate studiedOn,
+            @Min(0) @Max(1440) int durationMinutes,
+            @Min(0) int questions,
+            @Min(0) int correctAnswers
+    ) {}
 
-    public record CompleteReviewResult(StudyTask completedReview, StudyTask nextReview) {}
+    public record CompleteReviewResult(
+            StudyTask completedReview,
+            StudyTask nextReview,
+            StudySession recordedSession
+    ) {}
 
     public record SubjectMetrics(
             UUID subjectId, int minutes, int sessionCount, int questions, int correctAnswers,

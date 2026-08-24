@@ -130,7 +130,7 @@ public class StudyController {
 
     @PostMapping("/reviews/{id}/complete")
     public CompleteReviewResult completeReview(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
-                                               @RequestBody CompleteReviewRequest input) {
+                                               @Valid @RequestBody CompleteReviewRequest input) {
         return service.completeReview(userId(jwt), id, input);
     }
 

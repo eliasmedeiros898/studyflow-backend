@@ -197,16 +197,43 @@ public class StudyService {
         if (nextDate != null && !nextDate.isAfter(currentDate(userId))) {
             throw new IllegalArgumentException("A próxima revisão precisa ser agendada para uma data futura.");
         }
+        int durationMinutes = input == null ? 0 : input.durationMinutes();
+        int questions = input == null ? 0 : input.questions();
+        int correctAnswers = input == null ? 0 : input.correctAnswers();
+        validateReviewMetrics(durationMinutes, questions, correctAnswers);
+
+        LocalDate studiedOn = input == null || input.studiedOn() == null ? currentDate(userId) : input.studiedOn();
+        if (studiedOn.isAfter(currentDate(userId))) {
+            throw new IllegalArgumentException("A data da revisão não pode estar no futuro.");
+        }
+
+        StudySession recordedSession = null;
+        SessionEntity reviewSession = null;
+        if (durationMinutes > 0 || questions > 0) {
+            String topic = task.getSourceSession() == null
+                    ? task.getTitle().replaceFirst("(?i)^Revisar:\\s*", "").trim()
+                    : task.getSourceSession().getTopic();
+            reviewSession = sessions.save(new SessionEntity(users.getReferenceById(userId), task.getSubject(),
+                    topic, durationMinutes, studiedOn, questions, correctAnswers, SessionType.REVIEW));
+            recordedSession = toSession(reviewSession);
+        }
         task.complete();
         tasks.flush();
         StudyTask next = null;
         if (nextDate != null) {
             TaskEntity followUp = tasks.save(new TaskEntity(users.getReferenceById(userId), task.getSubject(),
                     task.getTitle(), nextDate, TaskType.REVIEW, TaskOrigin.AUTOMATIC_REVIEW,
-                    task.getSourceSession(), task.getReviewTopicKey()));
+                    reviewSession == null ? task.getSourceSession() : reviewSession, task.getReviewTopicKey()));
             next = toTask(followUp);
         }
-        return new CompleteReviewResult(toTask(task), next);
+        return new CompleteReviewResult(toTask(task), next, recordedSession);
+    }
+
+    static void validateReviewMetrics(int durationMinutes, int questions, int correctAnswers) {
+        if (durationMinutes < 0 || durationMinutes > 1440) {
+            throw new IllegalArgumentException("A duração deve ficar entre 0 e 1440 minutos.");
+        }
+        validateAnswers(questions, correctAnswers);
     }
 
     @Transactional
@@ -374,7 +401,7 @@ public class StudyService {
         return subjectId + "|" + (topicKey == null ? "" : topicKey);
     }
 
-    private void validateAnswers(int questions, int correctAnswers) {
+    private static void validateAnswers(int questions, int correctAnswers) {
         if (correctAnswers > questions) {
             throw new IllegalArgumentException("Acertos não podem ser maiores que o total de questões.");
         }
