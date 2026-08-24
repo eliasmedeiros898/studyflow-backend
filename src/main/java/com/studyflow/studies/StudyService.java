@@ -67,7 +67,8 @@ public class StudyService {
             int correct = items.stream().mapToInt(SessionEntity::getCorrectAnswers).sum();
             return new TopicSummary(items.get(0).getTopic(), items.size(),
                     items.stream().mapToInt(SessionEntity::getDurationMinutes).sum(), questions, correct,
-                    calculateAccuracy(correct, questions), items.get(0).getStudiedOn());
+                    calculateAccuracy(correct, questions), items.get(0).getStudiedOn(),
+                    items.stream().map(this::toSession).toList());
         }).toList();
         return new SubjectDetails(toSubject(subject), metrics(subjectId, related), topics,
                 related.stream().limit(10).map(this::toSession).toList(),

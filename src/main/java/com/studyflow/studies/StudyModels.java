@@ -94,7 +94,7 @@ public final class StudyModels {
 
     public record TopicSummary(
             String topic, int sessionCount, int minutes, int questions, int correctAnswers,
-            int accuracy, LocalDate lastStudiedOn
+            int accuracy, LocalDate lastStudiedOn, List<StudySession> sessions
     ) {}
 
     public record SubjectDetails(
