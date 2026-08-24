@@ -9,5 +9,3 @@ BEGIN
     END IF;
 END
 $$;
-
-ALTER TABLE public.flyway_schema_history ENABLE ROW LEVEL SECURITY;
